@@ -1,0 +1,3 @@
+
+find ISLES2018/TRAINING -type f -name "*.nii" -not -name "*DPWI*" >fileNames.txt
+
