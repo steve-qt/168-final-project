@@ -1,0 +1,1 @@
+find ISLES2018/TRAINING -type f -name "*DPWI*.nii"  >pwi_filenames.txt

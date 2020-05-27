@@ -3,33 +3,72 @@ import numpy as np
 import nibabel as nib
 from matplotlib import pyplot as plt
 
-#hello
-# example_filename = "ISLES2018/TRAINING/case_1/SMIR.Brain.XX.O.CT_CBF.345563/SMIR.Brain.XX.O.CT_CBF.345563.nii"
-# data = nib.load(example_filename)
-# img = data.get_fdata()
-# slides = img[:, :, 5]
-# plt.figure()
-# plt.imshow(slides.T,cmap='gray',origin="lower")
-# plt.show()
 
-f = open("filenames.txt", "r")
-for line in f:
-    trimmed_path = line.rstrip()
-    file_name_only = trimmed_path.rsplit("/", 1)[1]
-    if file_name_only.endswith(".nii"):
-        file_name_only = file_name_only[:-4]
+def import_non_pwi_img():
+    f = open("filenames.txt", "r")
+    for line in f:
+        trimmed_path = line.rstrip()
+        splits = trimmed_path.rsplit("/", 3)
+        case = splits[1]
+        file_name_only = splits[3]
+        if file_name_only.endswith(".nii"):
+            file_name_only = file_name_only[:-4]
 
-    data = nib.load(trimmed_path)
-    img = data.get_fdata()
-    shape = np.shape(img)
-    print(shape)
-    num_of_slides = shape[2]
-    for i in range(num_of_slides):
-        slides = img[:, :, i]
-        plt.imshow(slides, cmap='gray', origin="lower")
-        path = os.path.join("IMG", file_name_only)
+        file_type = "CT"
+        if "CBF" in file_name_only:
+            file_type = "CBF"
+        elif "CBV" in file_name_only:
+            file_type = "CBV"
+        elif "MTT" in file_name_only:
+            file_type = "MTT"
+        elif "Tmax" in file_name_only:
+            file_type = "Tmax"
+        elif "OT" in file_name_only:
+            file_type = "OT"
+
+        data = nib.load(trimmed_path)
+        img = data.get_fdata()
+
+        shape = np.shape(img)
+        num_of_slides = shape[2]
+        path = os.path.join("IMG", case, file_type)
         if not os.path.isdir(path):
             os.makedirs(path)
-        plt.savefig(fname=path + "/" + str(i), format="png")
-        plt.show()
-f.close()
+            for i in range(num_of_slides):
+                slide = img[:, :, i]
+                plt.imshow(slide.T, cmap='gray', origin="lower")
+                plt.savefig(fname=path + "/" + str(i), format="png")
+                plt.show()
+    f.close()
+
+
+def import_pwi_img():
+    f = open("pwi_filenames.txt", "r")
+    for line in f:
+        trimmed_path = line.rstrip()
+        splits = trimmed_path.rsplit("/", 3)
+        case = splits[1]
+        file_name_only = splits[3]
+
+        data = nib.load(trimmed_path)
+        img = data.get_fdata()
+        shape = np.shape(img)
+
+        path = os.path.join("IMG", case, "pwi")
+        if not os.path.isdir(path):
+            os.makedirs(path)
+            for i in range(shape[2]):
+                for j in range(shape[3]):
+                    slide = img[:, :, i, j]
+                    plt.imshow(slide.T, cmap='gray', origin="lower")
+                    print(path)
+                    plt.savefig(fname=path + "/" + str(i) + "-" + str(j), format="png")
+                    #plt.show()
+
+def main():
+    import_non_pwi_img()
+    import_pwi_img()
+
+
+if __name__ == "__main__":
+    main()
