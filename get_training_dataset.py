@@ -9,7 +9,7 @@ from matplotlib import pyplot as plt
 
 CSV_NAME = "training_cvs"
 IMG_SIZE = 256
-NUM_OF_PIXELS = 300
+NUM_OF_SELECTED_SAMPLE = 300
 SAMPLE_SPACE = 200
 
 
@@ -24,31 +24,43 @@ def get_lesion_pixels(case_id,slice_id):
             for j in range(IMG_SIZE):
                 if data[i,j] != 0.0:
                     lesion.append([i,j])
-                else: no_lesion.append([i,j])
+                else:
+                    no_lesion.append([i,j])
 
         # random choose pixels to fit SAMPLE_SPACE
-        lesion_sample = random.sample(lesion, NUM_OF_PIXELS)
-        no_lesion_sample = random.sample(lesion, NUM_OF_PIXELS)
-        return lesion_sample,no_lesion_sample
+        lesion_sample_size = len(lesion)
+        if lesion_sample_size > NUM_OF_SELECTED_SAMPLE:
+            lesion_sample_size = NUM_OF_SELECTED_SAMPLE
+        lesion_sample = random.sample(lesion,lesion_sample_size)
+
+        no_lesion_sample_size = len(no_lesion)
+        if no_lesion_sample_size > NUM_OF_SELECTED_SAMPLE:
+            no_lesion_sample_size = NUM_OF_SELECTED_SAMPLE
+        no_lesion_sample = random.sample(lesion, lesion_sample_size)
+        return lesion_sample, no_lesion_sample
     return None
 
 
 def get_training_set(case_id,slice_id):
-    training_set = []
+    intensity_arr = []
+    key = []
     lesion, no_lesion = get_lesion_pixels(case_id,slice_id)
     for x,y in lesion:
         sample = intpf.get_interpolate_sample(case_id,slice_id,x,y)
-        norm = np.linalg.norm(sample)
-        normalized = sample / norm
-        training_set.append([1, normalized])
+        intensity_arr.append(normalize(sample))
+        key.append(1)
 
     for x,y in no_lesion:
-        sample = intpf.get_interpolate_sample(case_id,slice_id,x,y)
-        norm = np.linalg.norm(sample)
-        normalized = sample / norm
-        training_set.append([0, normalized])
+        sample = intpf.get_interpolate_sample(case_id, slice_id, x, y)
+        intensity_arr.append(normalize(sample))
+        key.append(0)
 
-    return training_set
+    return intensity_arr, key
 
+
+
+def normalize(sample):
+    norm = np.linalg.norm(sample)
+    return sample / norm
 
 

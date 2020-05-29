@@ -65,7 +65,6 @@ def import_pwi_by_case(case_id):
         trimmed_path = line.rstrip()
         splits = trimmed_path.rsplit("/", 3)
         id = splits[1]
-        print(id)
         if id == "case_" + str(case_id):
             data = nib.load(trimmed_path)
             img = data.get_fdata()
@@ -76,8 +75,10 @@ def import_pwi_by_case(case_id):
                         path = os.path.join("dataset","case_" + str(case_id), "PWI", "v" + str(slice_num))
                         if not os.path.isdir(path):
                             os.makedirs(path)
-                            print("generating pwi at", path)
-                        np.savetxt(os.path.join(path, str(x) + "-" + str(y)), img[x, y, slice_num, :], fmt='%.4f')
+                        print("generating pwi at", path)
+                        file_name = os.path.join(path, str(x) + "-" + str(y))
+                        if not os.path.isfile(file_name):
+                            np.savetxt(file_name, img[x, y, slice_num, :], fmt='%.4f')
     f.close()
 
 
