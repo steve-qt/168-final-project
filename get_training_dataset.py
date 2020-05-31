@@ -13,7 +13,7 @@ NUM_OF_SELECTED_SAMPLE = 300
 BATCH_DIR = "batch"
 KEY_DIR = "key"
 DATASET_DIR = "dataset"
-SAMPLE_SIZE = 300
+SAMPLE_SIZE = 70
 
 def get_lession_value_of_a_slice(case_id,slice_id):
     values = []
@@ -24,6 +24,8 @@ def get_lession_value_of_a_slice(case_id,slice_id):
             for y in range(IMG_SIZE):
                 values.append(data[x,y])
     return values
+
+
 
 def get_lesion_pixels(case_id,slice_id):
     lesion = []
@@ -72,7 +74,14 @@ def get_training_set_by_case(case_id,slice_id):
         no_lesion_size = NUM_OF_SELECTED_SAMPLE
     lesion = random.sample(lesion, lesion_size)
     no_lesion = random.sample(no_lesion, no_lesion_size)
+    return  lesion,no_lesion
 
+
+
+def get_training_set(case_id,slice_id):
+    intensity_arr = []
+    key = []
+    lesion, no_lesion = get_lesion_pixels(case_id,slice_id)
     for x,y in lesion:
         sample = intpf.get_interpolate_sample(case_id,slice_id,x,y)
         intensity_arr.append(normalize(sample))
@@ -84,6 +93,7 @@ def get_training_set_by_case(case_id,slice_id):
         key.append(0)
 
     return intensity_arr, key
+
 
 
 
@@ -148,3 +158,10 @@ def get_testing_set(case_id,slice_id):
                     testing_key.append(0)
 
     return testing_set,testing_key
+
+
+def normalize(sample):
+    norm = np.linalg.norm(sample)
+    return sample / norm
+
+

@@ -14,7 +14,6 @@ DATASET_DIR = "dataset"
 SAMPLE_SIZE = 70
 NUMBER_OF_PATIENTS = 91
 
-
 def import_non_pwi():
     f = open("filenames.txt", "r")
     for line in f:
@@ -50,7 +49,6 @@ def import_non_pwi():
                 np.savetxt(os.path.join(path, str(i)), slice, fmt="%.6f")
     f.close()
 
-#redudant
 def import_pwi_img():
     f = open("pwi_filenames.txt", "r")
     for line in f:
@@ -73,9 +71,6 @@ def import_pwi_img():
 
 #redudant
 def import_pwi_by_case(case_id):
-    if os.path.isdir(os.path.join("dataset", "case_" + str(case_id), "PWI")):
-        return
-
     f = open("pwi_filenames.txt", "r")
     for line in f:
         trimmed_path = line.rstrip()
@@ -141,3 +136,4 @@ def import_key_by_case(case_id, slice_id):
         if not os.path.isdir(key_path):
             os.makedirs(key_path)
         key_file_name = os.path.join(key_path, str(slice_id))
+

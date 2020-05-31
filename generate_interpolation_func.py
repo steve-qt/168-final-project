@@ -6,6 +6,7 @@ from matplotlib import pyplot as plt
 IMG_SIZE = 256
 SAMPLE_SIZE = 300
 
+
 def get_intensity_of_a_voxel(case_id,slice_id,x,y):
     file_name = os.path.join("dataset", "case_" + str(case_id), "PWI","v" + str(slice_id),str(x) + "-" + str(y))
     if os.path.isfile(file_name):
@@ -27,6 +28,7 @@ def get_interpolate_sample(case_id,slice_id,x,y):
     f = get_interpolate_func(intensity_arr,size)
     xnew = np.linspace(0,size,num=SAMPLE_SIZE)
     return f(xnew)
+
 
 def display_interpolate_func(arr,size,func):
     xnew = np.arange(0,size)
