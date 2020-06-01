@@ -4,6 +4,7 @@ from sklearn import preprocessing as pp
 import get_graph as gg
 import generate_interpolation_func as intpf
 import random
+import fnmatch
 from sklearn import preprocessing
 from matplotlib import pyplot as plt
 
@@ -24,7 +25,6 @@ def get_lession_value_of_a_slice(case_id,slice_id):
             for y in range(IMG_SIZE):
                 values.append(data[x,y])
     return values
-
 
 
 def get_lesion_pixels(case_id,slice_id):
@@ -77,7 +77,6 @@ def get_training_set_by_case(case_id,slice_id):
     return  lesion,no_lesion
 
 
-
 def get_training_set(case_id,slice_id):
     intensity_arr = []
     key = []
@@ -93,8 +92,6 @@ def get_training_set(case_id,slice_id):
         key.append(0)
 
     return intensity_arr, key
-
-
 
 
 def generate_training_batch(start_case,end_case):
@@ -120,8 +117,6 @@ def generate_training_batch(start_case,end_case):
 
         for slice_id in range(num_of_slices):
             batch, key = get_training_set_by_case(case_id,slice_id)
-            if batch == None:
-                break
             with open(batch_path, "w+") as f:
                 np.savetxt(f,batch,fmt="%.6f")
             with open(key_path,"w+") as g:
@@ -129,10 +124,12 @@ def generate_training_batch(start_case,end_case):
             f.close()
             g.close()
 
+
 def normalize(sample):
     #norm = np.linalg.norm(sample)
     #return sample / norm
     return preprocessing.normalize(sample.reshape(1,-1))
+
 
 def get_testing_set(case_id,slice_id):
     testing_set = []
@@ -164,4 +161,23 @@ def normalize(sample):
     norm = np.linalg.norm(sample)
     return sample / norm
 
+
+def combine_batches(start_case=1,end_case=10):
+    batches = []
+    keys = []
+    size = 0
+    files = os.listdir(BATCH_DIR)
+    for case_id in range(start_case,end_case+1):
+        for file in files:
+            if fnmatch.fnmatch(file,str(case_id) + "-*"):
+                size += 1
+                print("Combining File", file)
+                batch_path = os.path.join(BATCH_DIR, file)
+                key_path = os.path.join(KEY_DIR, file)
+                batch = np.loadtxt(batch_path)
+                key = np.loadtxt(key_path)
+                # print("batch size: %d - key size: %d" %(len(batch), len(key)))
+                batches.append(batch)
+                keys.append(key)
+    return batches, keys, size
 

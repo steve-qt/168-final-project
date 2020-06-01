@@ -12,7 +12,7 @@ BATCH_DIR = "batch"
 KEY_DIR = "key"
 DATASET_DIR = "dataset"
 SAMPLE_SIZE = 70
-NUMBER_OF_PATIENTS = 91
+NUMBER_OF_PATIENTS = 94
 
 def import_non_pwi():
     f = open("filenames.txt", "r")
@@ -109,31 +109,44 @@ def import_batches():
         num_of_slices = shape[2]
         for slice_id in range(num_of_slices):
             batch_filename = os.path.join(BATCH_DIR, str(case_id) + "-" + str(slice_id))
-            if os.path.isfile(batch_filename):
-                break
-
-            batch = np.zeros([SAMPLE_SIZE, ])
-            for x in range(IMG_SIZE):
-                print("interpolate_sample case %d - slice %d at x =  %d" % (case_id, slice_id, x))
-                for y in range(IMG_SIZE):
-                    intensity_arr = data[x, y, slice_id,]
-                    intensity_arr[intensity_arr < 0] = 0
-                    f = intpf.get_interpolate_func(intensity_arr, shape[3])
-                    xnew = np.linspace(0, shape[3], num=SAMPLE_SIZE)
-                    normalized = preprocessing.normalize(f(xnew).reshape(1,-1))
-                    batch = np.append(batch, normalized)
-            with open(batch_filename, "w+") as f:
-                np.savetxt(f, batch, fmt="%.6f")
+            batch = []
+            if not os.path.isfile(batch_filename):
+                for x in range(IMG_SIZE):
+                    print("interpolate_sample case %d - slice %d at x =  %d" % (case_id, slice_id, x))
+                    for y in range(IMG_SIZE):
+                        intensity_arr = data[x, y, slice_id,]
+                        intensity_arr[intensity_arr < 0] = 0
+                        f = intpf.get_interpolate_func(intensity_arr, shape[3])
+                        xnew = np.linspace(0, shape[3], num=SAMPLE_SIZE)
+                        normalized = preprocessing.normalize(f(xnew).reshape(1, -1))
+                        batch.append(normalized)
+                with open(batch_filename, "w+") as f:
+                    np.savetxt(f, np.array(batch).reshape(1, -1), fmt="%.6f")
 
 
+def import_keys():
+    if not os.path.isdir(KEY_DIR):
+        os.makedirs(KEY_DIR)
 
-def import_key_by_case(case_id, slice_id):
+    batches = os.listdir(BATCH_DIR)
+    num_of_batches = len(batches)
+    if num_of_batches > 0:
+        for batch_name in batches:
+            key_file_name = os.path.join(KEY_DIR, batch_name)
+            if not os.path.isfile(key_file_name) and batch_name != ".DS_Store":
+                tripped = batch_name.split("-")
+                case_id = int(tripped[0])
+                slice_id = int(tripped[1])
+                print("importing key at case - slice: %d - %d" % (case_id, slice_id))
+
+                # read OT file
+                OT_file_name = os.path.join(DATASET_DIR, "case_" + str(case_id), "OT", str(slice_id))
+                if os.path.isfile(OT_file_name):
+                    data = np.loadtxt(OT_file_name)
+                    np.savetxt(key_file_name, data,fmt="%d")
 
 
-    OT_file_name = os.path.join(DATASET_DIR, "case_" + str(case_id), "OT", str(slice_id))
-    if os.path.isfile(OT_file_name):
-        key_path = os.path.join(KEY_DIR, "case_" + str(case_id))
-        if not os.path.isdir(key_path):
-            os.makedirs(key_path)
-        key_file_name = os.path.join(key_path, str(slice_id))
+
+
+
 

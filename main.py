@@ -1,128 +1,57 @@
 import nii_reader as nii
 import generate_interpolation_func as gif
 import get_training_dataset as trainer
-import get_graph
+import get_graph as gg
 import os
 import numpy as np
 from sklearn import tree
 from sklearn.metrics import accuracy_score
-SAMPLE_SIZE = 300
-BATCH_DIR = "batch"
-KEY_DIR = "key"
-COMBI_BATCH  = "batch/big_batch"
-COMBI_KEY = "key/big_key"
 from sklearn.model_selection import KFold
 from sklearn.model_selection import RepeatedKFold
 
+SAMPLE_SIZE = 70
+IMG_SIZE = 256
+BATCH_DIR = "batch"
+KEY_DIR = "key"
+COMBI_BATCH = "batch/big_batch"
+COMBI_KEY = "key/big_key"
+
+
 def main():
-    # 1.import non pwi
-    # nii.import_non_pwi()
-    # 2.import pwi by case
-    # for case_id in range(70):
-    #     nii.import_pwi_by_case(case_id)
-
-    # 3.generate training set
-    # for case_id in range(1,71):
-    #     trainer.genrate_batch_by_case(case_id)
-
-    # # 5.feed to decision tree machine learning
-    # combine_batch()
-    # X_train = np.loadtxt(COMBI_BATCH)
-    # Y_train = np.loadtxt(COMBI_KEY)
-    # clf = tree.DecisionTreeClassifier()
-    # clf = clf.fit(X_train,Y_train)
-
-    # # 4. testing dataset
-    # print("generating testing dataset")
-    # X_test,Y_test  = trainer.get_testing_set(51,1)
-
-    # # 6. predict
-    # Y_predicted = clf.predict(X_test)
-    # score = accuracy_score(Y_test, Y_predicted)
-    # print("Accuracy score = ",score)
-
+    #nii.import_non_pwi()
     nii.import_batches()
+    nii.import_keys()
 
-    # 2.import pwi by case
-    #for item in case_arr:
-       # nii.import_pwi_by_case(item)
+    X, Y, size = trainer.combine_batches(55,69)
+    X = np.array(X).flatten().reshape((size*IMG_SIZE*IMG_SIZE, SAMPLE_SIZE))
+    Y = np.array(Y).flatten().reshape(size*IMG_SIZE*IMG_SIZE, 1)
 
-    # 3.get training set and save it
-    #batch_name = "1-10"
-    #if not os.path.isdir("batch"):
-      #os.makedirs("batch")
-    #if not os.path.isdir("key"):
-        # os.makedirs("key")
+    # split = 5, train= 80%, test =20%
+    # rpkf = RepeatedKFold(n_splits=5, n_repeats=10, random_state=2652124)
+    # for train_index, test_index in rpkf.split(X):
+    #     x_train, x_test = X[train_index], X[test_index]
+    #     y_train, y_test = Y[train_index], Y[test_index]
     #
-    #file_name = os.path.join("batch",batch_name)
-    #key_path = os.path.join("key",batch_name)
-    #
-    #for case_id in case_arr:
-        #slice_id = 0
-        #batch,key = trainer.get_training_set(case_id, slice_id)
-        #with open(file_name,"w+") as f:
-            #np.savetxt(f,batch,fmt="%.6f")
-        #with open(key_path,"w+") as g:
-            #np.savetxt(g,key,fmt="%d")
-        #f.close()
-        #g.close()
-
-    # 4. testing dataset
-    #nii.import_pwi_by_case(12)
-    # batch, key = trainer.get_training_set(12, 1)
-    # with open("batch/12", "w+") as f:
-    #     np.savetxt(f, batch, fmt="%.6f")
-    # with open("key/12", "w+") as g:
-    #     np.savetxt(g, key, fmt="%d")
-    # f.close()
-    # g.close()
-
-    # 4.5.  K FOlD split some test data from  training data
-    # #split = 5, train= 80%, test =20%
-    #     rpkf=RepeatedKFold(n_splits=5, n_repeats=50, random_state=2652124) #repeat 50 times, adds more accuracy
-    #     rpkf.get_n_splits(batch)
-    #     print(rpkf)
-    #     training_data=[]
-    #     testing_data=[]
-    #     for train_index, test_index in rpkf.split(batch):
-    #         #print("TRAIN:", train_index, "TEST:", test_index)
-    #         #print("TEST:", test_index)
-    #         training_data.append(train_index)
-    #         testing_data.append(test_index)
-    #
-    #     print(testing_data)
-    #     #training_data,testing_data
-    #split = 5, train= 80%, test =20%
-    # rpkf=RepeatedKFold(n_splits=5, n_repeats=50, random_state=2652124) #repeat 50 times, adds more accuracy
-    # rpkf.get_n_splits(batch)
-    # print(rpkf)
-    # training_data=[]
-    # testing_data=[]
-    # for train_index, test_index in rpkf.split(batch):
-    #     #print("TRAIN:", train_index, "TEST:", test_index)
-    #     #print("TEST:", test_index)
-    #     training_data.append(train_index)
-    #     testing_data.append(test_index)
-    #
-    # print(testing_data)
-    #training_data,testing_data
-
-
-
-    # 5.feed to decision tree machine learning
-    # X = np.loadtxt(os.path.join("batch","1-10"))
-    # Y = np.loadtxt(os.path.join("key","1-10"))
     # clf = tree.DecisionTreeClassifier()
-    # clf = clf.fit(X,Y)
-    #
-    # X_test = np.loadtxt(os.path.join("batch","12"))
-    # Y_test = np.loadtxt(os.path.join("key", "12"))
-    # Y_predicted = clf.predict(X_test)
+    # clf = clf.fit(x_train,y_train)
+    # y_predicted = clf.predict(x_test)
+    # score = accuracy_score(y_test, y_predicted)
+    # print("Accuracy score = ", score)
 
-    #print(Y_predicted)
-    # score = accuracy_score(Y_test, Y_predicted)
-    # print("Accuracy score = ",score)
+    #testing case 93-0
+    batch_path = os.path.join(BATCH_DIR,"51-1")
+    key_path = os.path.join(KEY_DIR,"51-1")
+    batch = np.array(np.loadtxt(batch_path)).reshape((IMG_SIZE*IMG_SIZE, SAMPLE_SIZE))
+    key = np.array(np.loadtxt(key_path)).reshape((IMG_SIZE*IMG_SIZE, 1))
+
+    clf = tree.DecisionTreeClassifier()
+    clf = clf.fit(X, Y)
+    y_predicted = clf.predict(batch)
+    score = accuracy_score(key, y_predicted)
+    print("Accuracy score = ", score)
+
+    gg.get_OT_firgure_by_1D_array(y_predicted)
+    gg.get_OT_firgure_by_1D_array(key)
 
 if __name__ == "__main__":
     main()
-
