@@ -1,7 +1,6 @@
 import os
 import numpy as np
 import nibabel as nib
-from matplotlib import pyplot as plt
 import generate_interpolation_func as intpf
 from sklearn import preprocessing
 from scipy import interpolate
@@ -11,8 +10,9 @@ NUM_OF_SELECTED_SAMPLE = 300
 BATCH_DIR = "batch"
 KEY_DIR = "key"
 DATASET_DIR = "dataset"
-SAMPLE_SIZE = 70
+SAMPLE_SIZE = 49
 NUMBER_OF_PATIENTS = 94
+
 
 def import_non_pwi():
     f = open("filenames.txt", "r")
@@ -36,6 +36,9 @@ def import_non_pwi():
         elif "OT" in file_name_only:
             file_type = "OT"
 
+        if not os.path.isfile(trimmed_path):
+            break
+
         data = nib.load(trimmed_path)
         img = data.get_fdata()
         shape = np.shape(img)
@@ -48,6 +51,7 @@ def import_non_pwi():
                 slice = img[:, :, i]
                 np.savetxt(os.path.join(path, str(i)), slice, fmt="%.6f")
     f.close()
+
 
 def import_pwi_img():
     f = open("pwi_filenames.txt", "r")
@@ -69,37 +73,16 @@ def import_pwi_img():
                         np.savetxt(os.path.join(path, str(x) + "-" + str(y)), img[x, y, slice_num, :], fmt="%.6f")
     f.close()
 
-#redudant
-def import_pwi_by_case(case_id):
-    f = open("pwi_filenames.txt", "r")
-    for line in f:
-        trimmed_path = line.rstrip()
-        splits = trimmed_path.rsplit("/", 3)
-        id = splits[1]
-        if id == "case_" + str(case_id):
-            data = nib.load(trimmed_path)
-            img = data.get_fdata()
-            shape = np.shape(img)
-            for slice_num in range(shape[2]):
-                for x in range(shape[0]):
-                    for y in range(shape[1]):
-                        path = os.path.join("dataset", "case_" + str(case_id), "PWI", "v" + str(slice_num))
-                        if not os.path.isdir(path):
-                            os.makedirs(path)
-                        print("generating pwi at", path)
-                        file_name = os.path.join(path, str(x) + "-" + str(y))
-                        if not os.path.isfile(file_name):
-                            np.savetxt(file_name, img[x, y, slice_num, :], fmt='%.4f')
-    f.close()
 
-
-def import_batches():
+def import_batches(start=1, end=94):
     f = open("pwi_filenames.txt", "r")
     for line in f:
         trimmed_path = line.rstrip()
         splits = trimmed_path.rsplit("/", 3)
         id_part = splits[1]
         case_id = int(id_part[5:])
+        if case_id not in range(start, end+1):
+            continue
 
         if not os.path.isdir(BATCH_DIR):
             os.makedirs(BATCH_DIR)
@@ -112,14 +95,13 @@ def import_batches():
             batch = []
             if not os.path.isfile(batch_filename):
                 for x in range(IMG_SIZE):
-                    print("interpolate_sample case %d - slice %d at x =  %d" % (case_id, slice_id, x))
+                    print("interpolate_sample case %d - slice %d at x =  %d time_period = %d" % (case_id, slice_id, x, shape[3]))
                     for y in range(IMG_SIZE):
                         intensity_arr = data[x, y, slice_id,]
                         intensity_arr[intensity_arr < 0] = 0
                         f = intpf.get_interpolate_func(intensity_arr, shape[3])
-                        xnew = np.linspace(0, shape[3], num=SAMPLE_SIZE)
-                        normalized = preprocessing.normalize(f(xnew).reshape(1, -1))
-                        batch.append(normalized)
+                        new_x = np.linspace(0.0, float(shape[3]), num=SAMPLE_SIZE)
+                        batch.append(f(new_x))
                 with open(batch_filename, "w+") as f:
                     np.savetxt(f, np.array(batch).reshape(1, -1), fmt="%.6f")
 
@@ -146,7 +128,28 @@ def import_keys():
                     np.savetxt(key_file_name, data,fmt="%d")
 
 
-
+#redudant
+def import_pwi_by_case(case_id):
+    f = open("pwi_filenames.txt", "r")
+    for line in f:
+        trimmed_path = line.rstrip()
+        splits = trimmed_path.rsplit("/", 3)
+        id = splits[1]
+        if id == "case_" + str(case_id):
+            data = nib.load(trimmed_path)
+            img = data.get_fdata()
+            shape = np.shape(img)
+            for slice_num in range(shape[2]):
+                for x in range(shape[0]):
+                    for y in range(shape[1]):
+                        path = os.path.join("dataset", "case_" + str(case_id), "PWI", "v" + str(slice_num))
+                        if not os.path.isdir(path):
+                            os.makedirs(path)
+                        print("generating pwi at", path)
+                        file_name = os.path.join(path, str(x) + "-" + str(y))
+                        if not os.path.isfile(file_name):
+                            np.savetxt(file_name, img[x, y, slice_num, :], fmt='%.4f')
+    f.close()
 
 
 
