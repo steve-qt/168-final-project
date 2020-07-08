@@ -24,6 +24,7 @@ KEY_DIR = "key"
 MODEL_DIR = "model"
 COMBI_BATCH = "batch/big_batch"
 COMBI_KEY = "key/big_key"
+MAX_CASE = 90
 
 models = {
         'BaggingClassifier': BaggingClassifier(),
@@ -44,33 +45,37 @@ models = {
         'SGDClassifier_perceptron': linear_model.SGDClassifier(loss='perceptron'),
         'SGDClassifier_squared_hinge': linear_model.SGDClassifier(loss='squared_hinge'),
         'SVC_rbf': SVC(),
-        'SVC_sigmoid': SVC(kernel='sigmoid'),
-        'SVC_linear': SVC(kernel='linear'),
+        'SVC_sigmoid': SVC(kernel='sigmoid')
 }
+
+scaler = preprocessing.MinMaxScaler()
 
 def main():
     # # 1 import non pwi
-    # nii.import_non_pwi()
+    nii.import_non_pwi()
 
     # # 2. import batches
-    nii.import_batches(1, 94)
+    nii.import_batches(1, MAX_CASE)
 
     # # 3. import keys
-    # nii.import_keys()
+    nii.import_keys()
 
     # 4. combine batches into a single batch file, and keys into a single key file
     start_case = 1
-    end_case = 90
+    end_case = MAX_CASE
     X, Y, size = trainer.combine_batches(start_case, end_case)
-    normalized_x = preprocessing.scale(X)
-    X = np.reshape(normalized_x, (-1, SAMPLE_SIZE))
+    X = np.reshape(X, (-1, SAMPLE_SIZE))
     Y = np.array(Y).flatten()
+
 
     # 5.1 training and testing with Kfolds (split = 5, train= 80%, test =20%)
     rpkf = RepeatedKFold(n_splits=5, n_repeats=50, random_state=2652124)
     for train_index, test_index in rpkf.split(X):
         x_train, x_test = X[train_index], X[test_index]
         y_train, y_test = Y[train_index], Y[test_index]
+
+    normalized_x_train = preprocessing.scale(x_train)
+    normalized_x_test = preprocessing.scale(x_test)
 
     if not os.path.isdir(MODEL_DIR):
         os.makedirs(MODEL_DIR)
@@ -79,13 +84,13 @@ def main():
         model_file_path = os.path.join(MODEL_DIR,
                     model_name + "[" + str(start_case) + "-" + str(end_case) + "].sav")
         if not os.path.isfile(model_file_path):
-            clf = models[model_name].fit(x_train, y_train)
+            clf = models[model_name].fit(normalized_x_train, y_train)
             joblib.dump(clf, model_file_path)
         else:
             clf = joblib.load(model_file_path)
 
         # predict and report
-        y_predicted = clf.predict(x_test)
+        y_predicted = clf.predict(normalized_x_test)
         f1_s = f1_score(y_test, y_predicted)
         acc_s = accuracy_score(y_test, y_predicted)
         print("Model: %s  [%d - %d] f1_score = %f and acc_score = %f"
@@ -99,16 +104,17 @@ def predict_single_slice(slice_name, model_name):
     key_path = os.path.join(KEY_DIR, slice_name)
     if os.path.isfile(batch_path) and os.path.isfile(key_path):
         batch = np.reshape(np.loadtxt(batch_path).flatten(), (-1, SAMPLE_SIZE))
-        normalized = preprocessing.scale(batch)
+        # normalized = preprocessing.scale(batch)
+        normalized = scaler.transform(batch)
         key = np.loadtxt(key_path).flatten()
         model = joblib.load(os.path.join(MODEL_DIR, model_name))
         y_predicted = model.predict(normalized)
         f1_s = f1_score(key, y_predicted)
         acc_s = accuracy_score(key, y_predicted)
-        print("%f and  %f" % (f1_s, acc_s))
+        print("%s: f1=%f and  acc=%f" % (model_name, f1_s, acc_s))
         # reporter.generate_report(model_name + "on slice: " + slice_name, f1_s, acc_s)
-        gg.get_OT_firgure_by_1D_array(y_predicted, model_name[:-4] + "-predict:" + slice_name)
-        gg.get_OT_firgure_by_1D_array(key, "key:" + slice_name)
+        # gg.get_OT_firgure_by_1D_array(y_predicted, model_name[:-4] + "-predict:" + slice_name)
+        # gg.get_OT_firgure_by_1D_array(key, "key:" + slice_name)
 
 
 def get_highest_f1_score():
@@ -139,22 +145,15 @@ def get_highest_f1_score():
     return max_f1, cur_slice
 
 
-if __name__ == "__main__":
-    # for i in range(40,80):
-    #     for j in range(2):
-    #         predict_single_slice(str(i) + "-" + str(j))
-
-    # main()
-
-    # max_f1, cur_slice = get_highest_f1_score()
-    # print("Max f1 = ",max_f1)
-    # print("slice = ", cur_slice)
-
-    # gg.get_OT_figure(44, 1)
-    # gg.generate_interpolate_func_figure_for_a_slice("44-1")
-    # test()
-
+def predict():
     for model_name in models:
-        predict_single_slice("41-1", model_name + '[1-94].sav')
+        for i in range(91,94 ):
+            print("Predicting slice ", i, "-1")
+            predict_single_slice(str(i) + "-1", model_name + '[1-90].sav')
+
+
+if __name__ == "__main__":
+    main()
+    # predict()
 
 

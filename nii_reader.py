@@ -100,7 +100,7 @@ def import_batches(start=1, end=94):
                         intensity_arr = data[x, y, slice_id,]
                         intensity_arr[intensity_arr < 0] = 0
                         f = intpf.get_interpolate_func(intensity_arr, shape[3])
-                        new_x = np.linspace(0.0, float(shape[3]), num=SAMPLE_SIZE)
+                            new_x = np.linspace(0.0, float(shape[3]), num=SAMPLE_SIZE)
                         batch.append(f(new_x))
                 with open(batch_filename, "w+") as f:
                     np.savetxt(f, np.array(batch).reshape(1, -1), fmt="%.6f")
@@ -127,29 +127,6 @@ def import_keys():
                     data = np.loadtxt(OT_file_name)
                     np.savetxt(key_file_name, data,fmt="%d")
 
-
-#redudant
-def import_pwi_by_case(case_id):
-    f = open("pwi_filenames.txt", "r")
-    for line in f:
-        trimmed_path = line.rstrip()
-        splits = trimmed_path.rsplit("/", 3)
-        id = splits[1]
-        if id == "case_" + str(case_id):
-            data = nib.load(trimmed_path)
-            img = data.get_fdata()
-            shape = np.shape(img)
-            for slice_num in range(shape[2]):
-                for x in range(shape[0]):
-                    for y in range(shape[1]):
-                        path = os.path.join("dataset", "case_" + str(case_id), "PWI", "v" + str(slice_num))
-                        if not os.path.isdir(path):
-                            os.makedirs(path)
-                        print("generating pwi at", path)
-                        file_name = os.path.join(path, str(x) + "-" + str(y))
-                        if not os.path.isfile(file_name):
-                            np.savetxt(file_name, img[x, y, slice_num, :], fmt='%.4f')
-    f.close()
 
 
 
